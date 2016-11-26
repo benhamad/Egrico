@@ -234,6 +234,7 @@ def update_user(id):
     user.lat   = request.json.get('lat')
     user.location = request.json.get('location')
     db.session.commit()
+    return jsonify({'success': True})
 
 def init_db():
     """For use on command line for setting up
