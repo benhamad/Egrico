@@ -1,5 +1,5 @@
 from flask_api import FlaskAPI
-from flask import request, jsonify, url_for, abort
+from flask import request, jsonify, abort
 from flask_cors import CORS, cross_origin
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
@@ -14,8 +14,6 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:////tmp/test.db'
 db = SQLAlchemy(app)
 cors = CORS(app)
 app.config['CORS_HEADERS'] = 'Content-Type'
-
-
 
 
 class User(db.Model):
@@ -95,6 +93,7 @@ class Offer(db.Model):
             'offer_name':self.offer_name,
             'price':self.price,
             'category':self.category,
+            'location': self.location,
             'status':self.status,
             'date':self.date,
             'user_id': User.query.filter_by(id=self.user_id).first().to_dict()
