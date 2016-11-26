@@ -90,6 +90,7 @@ class Offer(db.Model):
 
     def to_array(self):
         d = {
+            'id': self.id,
             'offer_name':self.offer_name,
             'price':self.price,
             'category':self.category,
