@@ -79,6 +79,7 @@ class Offer(db.Model):
         return {
             'offer_name':self.offer_name,
             'description':self.description,
+            'id':self.id,
             'price':self.price,
             'category':self.category,
             'longt':self.longt,
@@ -152,7 +153,7 @@ def login():
 @cross_origin()
 def get_offer(id):
     offer = Offer.query.get(id)
-    off = Offer.query.filter_by(offer_name=offer.offer_name).all()
+    off = Offer.query.filter_by(offer_name=offer.offer_name).filter(Offer.id != offer.id).all()
     suggestion = []
     suggestion.append(off[0].to_dict())
     suggestion.append(off[1].to_dict())
@@ -232,6 +233,19 @@ def get_offers(id):
     array = [off.to_dict() for off in offers]
     return jsonify(array)
 
+
+@app.route('/reserve/<int:user_id>/<int:offer_id>')
+@cross_origin()
+def reserve(user_id, offer_id):
+    user = User.query.get(user_id)
+    offer = Offer.query.get(offer_id)
+    offer.status = "N"
+    msg = "Your offer for {} N{} has been reserver by {}".format(offer.offer_name, offer.id, user.username)
+    recipient = User.query.get(offer.user_id).phone
+    print recipient
+    sms(recipient, msg)
+    db.session.commit()
+    return jsonify({'success': True})
 
 @app.route('/send_sms/<int:id>')
 def send_sms(id):

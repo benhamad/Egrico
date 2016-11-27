@@ -17,4 +17,4 @@ def get_weather(location):
 
 
 def sms(phone, text):
-    requests.get("http://sms.tritux.com/v1/send?username=tunihack4&password=core2456&origin=VIPER&destination={}&text={}".format(phone, text))
+    r = requests.get("http://sms.tritux.com/v1/send?username=tunihack4&password=core2456&origin=VIPER&destination={}&text={}".format(phone, text))
