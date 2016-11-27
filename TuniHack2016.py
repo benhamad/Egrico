@@ -66,6 +66,7 @@ class Offer(db.Model):
     price = db.Column(db.Float)
     category = db.Column(db.String(100))
     longt = db.Column(db.String(100))
+    tag = db.Column(db.String(3))
     status = db.Column(db.String(100))
     date = db.Column(db.Date)
     location = db.Column(db.String(100))
@@ -83,6 +84,7 @@ class Offer(db.Model):
             'longt':self.longt,
             'status':self.status,
             'location': self.location,
+            'tag': self.tag,
             'date':self.date,
             'lat':self.lat,
             'user_id':self.user_id
@@ -96,11 +98,13 @@ class Offer(db.Model):
             'category':self.category,
             'location': self.location,
             'status':self.status,
+            'tag': self.tag,
             'date':self.date,
             'user_id': User.query.filter_by(id=self.user_id).first().to_dict()
         }
         return d
-    def __init__(self, offer_name, description, price, category, longt, lat, status, date, user_id):
+
+    def __init__(self, offer_name, description, price, category, longt, lat, status, date, user_id, tag):
         self.offer_name = offer_name
         self.description = description
         self.price = price
@@ -110,6 +114,7 @@ class Offer(db.Model):
         self.status = status
         self.date = date
         self.lat = lat
+        self.tag = tag
         self.user_id = user_id
 
 class Image(db.Model):
@@ -124,13 +129,6 @@ class Image(db.Model):
 def hello_world():
     return  jsonify('Hello World!')
 
-
-@app.route('/api/users/<int:id>')
-def get_user_id(id):
-    user = User.query.get(id)
-    if not user:
-        abort(400)
-    return jsonify({'username': user.username})
 
 
 @app.route('/users/login', methods=['POST'])
@@ -164,6 +162,7 @@ def new_offer():
     category = request.json.get('category')
     longt = request.json.get('longt')
     lat = request.json.get('lat')
+    tag = request.json.get('tag')
     price = request.json.get('price')
     status = 'D'
     date = datetime.now()
@@ -172,9 +171,7 @@ def new_offer():
     #     im = Image(image)
     #     db.session.add(im)
     # db.session.commit()
-
-
-    offer = Offer(offer_name, description, price, category, longt, lat, status, date, user_id)
+    offer = Offer(offer_name, description, price, category, longt, lat, status, date, user_id, tag)
     db.session.add(offer)
     db.session.commit()
     return jsonify({'id': offer.id})
@@ -187,6 +184,32 @@ def offer_list():
         offer.image = [1,1,1]
     array = [off.to_array() for off  in offers]
     return jsonify(array)
+
+
+@app.route('/offers_array', methods=['POST'])
+def new_offers():
+    offers = request.json
+    for offer in offers:
+
+        user_id = offer.get('user_id')
+        description = offer.get('description')
+        offer_name = offer.get('offer_name')
+        category = offer.get('category')
+        longt = offer.get('longt')
+        lat = offer.get('lat')
+        tag = offer.get('tag')
+        price = offer.get('price')
+        status = 'D'
+        date = datetime.now()
+        # images = request.json.get('images')
+        # for image in images:
+        #     im = Image(image)
+        #     db.session.add(im)
+        # db.session.commit()
+        off = Offer(offer_name, description, price, category, longt, lat, status, date, user_id, tag)
+        db.session.add(off)
+        db.session.commit()
+    return jsonify({'succes': True})
 
 
 @app.route('/users/offers/<int:id>')
@@ -225,13 +248,13 @@ def users_list():
     array = [usr.to_dict() for usr  in users]
     return jsonify(array)
 
-@app.route('/users/settings/<int:id>', methods=['PUT'])
+@app.route('/users/settings/<int:id>', methods=['POST'])
 @cross_origin()
 def update_user(id):
     user = User.query.filter_by(id=id).first()
     user.phone = request.json.get('phone')
     user.longt = request.json.get('longt')
-    user.lat   = request.json.get('lat')
+    user.lat = request.json.get('lat')
     user.location = request.json.get('location')
     db.session.commit()
     return jsonify({'success': True})
@@ -240,7 +263,6 @@ def init_db():
     """For use on command line for setting up
     the database.
     """
-
     db.drop_all()
     db.create_all()
 
