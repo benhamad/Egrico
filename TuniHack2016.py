@@ -3,8 +3,7 @@ from flask import request, jsonify, abort
 from flask_cors import CORS, cross_origin
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
-from helper import get_location_name
-
+from helper import get_location_name, get_weather, sms
 
 
 
@@ -72,6 +71,7 @@ class Offer(db.Model):
     location = db.Column(db.String(100))
     lat = db.Column(db.String(100))
     user_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    image = db.Column(db.String(100))
     images = db.relationship('Image', backref=db.backref('offers', lazy='select'))
 
 
@@ -87,6 +87,7 @@ class Offer(db.Model):
             'tag': self.tag,
             'date':self.date,
             'lat':self.lat,
+            'image':self.image,
             'user_id':self.user_id
         }
 
@@ -100,11 +101,12 @@ class Offer(db.Model):
             'status':self.status,
             'tag': self.tag,
             'date':self.date,
+            'image':self.image,
             'user_id': User.query.filter_by(id=self.user_id).first().to_dict()
         }
         return d
 
-    def __init__(self, offer_name, description, price, category, longt, lat, status, date, user_id, tag):
+    def __init__(self, offer_name, description, price, category, longt, image, lat, status, date, user_id, tag):
         self.offer_name = offer_name
         self.description = description
         self.price = price
@@ -115,6 +117,7 @@ class Offer(db.Model):
         self.date = date
         self.lat = lat
         self.tag = tag
+        self.image = image
         self.user_id = user_id
 
 class Image(db.Model):
@@ -149,8 +152,13 @@ def login():
 @cross_origin()
 def get_offer(id):
     offer = Offer.query.get(id)
-    print offer.to_dict()
-    return jsonify(offer.to_dict())
+    off = Offer.query.filter_by(offer_name=offer.offer_name).all()
+    suggestion = []
+    suggestion.append(off[0].to_dict())
+    suggestion.append(off[1].to_dict())
+    offer = offer.to_dict()
+    offer['suggestion'] = suggestion
+    return jsonify(offer)
 
 
 @app.route('/offers', methods=['POST'])
@@ -164,6 +172,7 @@ def new_offer():
     lat = request.json.get('lat')
     tag = request.json.get('tag')
     price = request.json.get('price')
+    image = request.json.get('image')
     status = 'D'
     date = datetime.now()
     # images = request.json.get('images')
@@ -171,7 +180,7 @@ def new_offer():
     #     im = Image(image)
     #     db.session.add(im)
     # db.session.commit()
-    offer = Offer(offer_name, description, price, category, longt, lat, status, date, user_id, tag)
+    offer = Offer(offer_name, description, price, category, longt, image, lat, status, date, user_id, tag)
     db.session.add(offer)
     db.session.commit()
     return jsonify({'id': offer.id})
@@ -180,8 +189,8 @@ def new_offer():
 @cross_origin()
 def offer_list():
     offers = Offer.query.filter_by().all()
-    for offer in offers:
-        offer.image = [1,1,1]
+    #for offer in offers:
+    #    offer.image = [1,1,1]
     array = [off.to_array() for off  in offers]
     return jsonify(array)
 
@@ -198,6 +207,7 @@ def new_offers():
         longt = offer.get('longt')
         lat = offer.get('lat')
         tag = offer.get('tag')
+        image = offer.get('image')
         price = offer.get('price')
         status = 'D'
         date = datetime.now()
@@ -206,8 +216,8 @@ def new_offers():
         #     im = Image(image)
         #     db.session.add(im)
         # db.session.commit()
-        off = Offer(offer_name, description, price, category, longt, lat, status, date, user_id, tag)
-        db.session.add(off)
+        offer = Offer(offer_name, description, price, category, longt, image, lat, status, date, user_id, tag)
+        db.session.add(offer)
         db.session.commit()
     return jsonify({'succes': True})
 
@@ -217,10 +227,20 @@ def new_offers():
 def get_offers(id):
     user = User.query.filter_by(id=id)
     offers = Offer.query.filter_by().all()
-    for offer in offers:
-        offer.image = [1, 1, 1]
+    #for offer in offers:
+    #    offer.image = [1, 1, 1]
     array = [off.to_dict() for off in offers]
     return jsonify(array)
+
+
+@app.route('/send_sms/<int:id>')
+def send_sms(id):
+    user = User.query.get(id)
+    w = get_weather(user.location)
+    weather = "The weather for {} is {}".format( w['date'], w['text'])
+    sms(user.phone, weather)
+
+    return jsonify({'success': True})
 
 
 @app.route('/users', methods=['POST'])
@@ -230,7 +250,7 @@ def new_user():
     password = request.json.get('password')
     longt = '0.00000'
     lat = '0.00000'
-    phone = ""
+    phone = request.json.get('phone')
     first_name = request.json.get('firstname')
     last_name = request.json.get('lastname')
     user = User(username, first_name, last_name, password, phone, longt, lat)
@@ -259,12 +279,6 @@ def update_user(id):
     db.session.commit()
     return jsonify({'success': True})
 
-def init_db():
-    """For use on command line for setting up
-    the database.
-    """
-    db.drop_all()
-    db.create_all()
 
 
 if __name__ == '__main__':
