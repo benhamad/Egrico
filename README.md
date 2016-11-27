@@ -13,7 +13,18 @@ There are three parts of the application:
 
 ## Mobile app
 
-The mobile app is developed in Ionic you can find it here: 
+The mobile application was developed with Ionic you can clone it with: 
+```
+git clone https://github.com/Fzwael/TuniHack.git
+```
+you have to follow this command to get it to work
+
+```
+cd TuniHack
+npm install 
+bower install
+
+```
 
 
 ## Flask Restful API
@@ -24,6 +35,16 @@ packages using `pip install`
 `Flask` 
 `Flask-SQLAlchemy`
 `Flask-api`
+
+By default the server will be binded to `127.0.0.1:5000'
+you need to remove that line and uncommnet the line above 
+
+```
+    #app.run('0.0.0.0', '80')
+    app.run('127.0.0.1', '5000')
+```
+
+**Beware** you need root rights to bind the script to port `80` 
 
 # Image server
 

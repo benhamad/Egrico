@@ -189,7 +189,7 @@ def new_offer():
 @app.route('/offers', methods=['GET'])
 @cross_origin()
 def offer_list():
-    offers = Offer.query.filter_by().all()
+    offers = Offer.query.filter(Offer.status == 'D').all()
     #for offer in offers:
     #    offer.image = [1,1,1]
     array = [off.to_array() for off  in offers]
@@ -240,9 +240,9 @@ def reserve(user_id, offer_id):
     user = User.query.get(user_id)
     offer = Offer.query.get(offer_id)
     offer.status = "N"
-    msg = "Your offer for {} N{} has been reserver by {}".format(offer.offer_name, offer.id, user.username)
+    msg = "Your offer for {} N {} has been reserver by {}".format(offer.offer_name, offer.id, user.username)
     recipient = User.query.get(offer.user_id).phone
-    print recipient
+    print recipient, msg
     sms(recipient, msg)
     db.session.commit()
     return jsonify({'success': True})
